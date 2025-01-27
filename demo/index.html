@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <title>Streamr video PoC</title>
+    <link type="image/png" rel="icon" href="favicon-16x16.png" size="16">
+    <link type="image/png" rel="icon" href="favicon-32x32.png" size="32">
+    <link type="image/png" rel="icon" href="favicon-96x96.png" size="96">
+    <link rel="stylesheet" type="text/css" href="demo.css" />
+    <script src="mpegts.js"></script>
+</head>
+
+<body>
+    <div>
+        <div class="video-container">
+
+            <video width="1280" height="720" name="videoElement" controls autoplay muted playsinline preload="metadata"
+                poster="streamr-loader.gif">
+                Your browser is too old which doesn't support HTML5 video.
+            </video>
+
+        </div>
+    </div>
+
+
+    <script>
+        var checkBoxFields = ['isLive', 'withCredentials', 'liveBufferLatencyChasing'];
+        var streamURL, mediaSourceURL;
+
+        function player_load() {
+            console.log('isSupported: ' + mpegts.isSupported());
+            var i;
+            var mediaDataSource = {
+                type: 'mse'
+            };
+            mediaDataSource['url'] = '0x5f8e71b79df31565e23a603a981fc78ddbab9d71/brubeck-video-stream'
+            //console.log('MediaDataSource', mediaDataSource);
+            player_load_mds(mediaDataSource);
+        }
+
+        function player_load_mds(mediaDataSource) {
+            var element = document.getElementsByName('videoElement')[0];
+
+            if (typeof player !== "undefined") {
+                if (player != null) {
+                    // try to destroy streamrclient if its in window.streamr
+                    try {
+                        window.streamr.destroy()
+                    } catch (error) {
+                        console.log('Attempting to destroy streamr client', error)
+                    }
+                    player.unload();
+                    player.detachMediaElement();
+                    player.destroy();
+                    player = null;
+                }
+            }
+            player = mpegts.createPlayer(mediaDataSource, {
+                isLive: true,
+                enableWorker: false,
+                lazyLoad: false,
+                stashInitialSize: 2048,
+                autoCleanupSourceBuffer: true,
+                liveBufferLatencyChasing: true,
+                liveBufferLatencyChasingOnPaused: true,
+                liveBufferLatencyMaxLatency: 5
+            });
+            player.attachMediaElement(element);
+            try {
+                player.load();
+            } catch (e) {
+                console.log('something went wrong', e)
+            }
+
+            player.on('error', function (event) {
+                player_load()
+            })
+
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            streamURL = document.getElementById('streamURL');
+            mediaSourceURL = document.getElementById('mediaSourceURL');
+            player_load();
+        });
+
+    </script>
+
+</body>
+
+</html>
